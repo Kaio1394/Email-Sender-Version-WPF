@@ -20,76 +20,82 @@ namespace EmailSender
     public partial class MainWindow : Window
     {
         private static List<string> _listFiles = new List<string>();
-        private string _tbSender;
-        private string _tbTo;
-        private string _tbSubject;
-        private string _tbBody;
-        private string _tbServer;
-        private string _tbAttachement;
-        private int _tbPort;
+        private ConfigsEmail _configEmail;
+        private ISender _sender;
+        private Helper _helper;
 
         public MainWindow()
         {
             InitializeComponent();
+            _sender = new Sender();
+            _helper = new Helper();
         }
-        private List<string> GetListFiles(string pathDir)
+
+        internal void Button_Click(object sender, RoutedEventArgs e)
         {
-            DirectoryInfo dir = new DirectoryInfo(pathDir);
-            return dir.GetFiles().Select(x => x.FullName).ToList();
-        }
-        private void Button_Click(object sender, RoutedEventArgs e)
-        {
-            _tbAttachement = tbAttachment.Text;
-            _tbSender = tbSender.Text;
-            _tbTo = tbTo.Text;
-            _tbSubject = tbTo.Text;
-            _tbBody = tbTo.Text;
-            _tbServer = tbServer.Text;
-            _tbPort = !string.IsNullOrEmpty(tbPort.Text) ? Convert.ToInt32(tbPort.Text)
-                : throw new ArgumentException("Invalid value port value!");
+            _configEmail = new ConfigsEmail()
+            {
+                Body = tbTo.Text,
+                Subject = tbTo.Text,
+                To = tbTo.Text,
+                Port = !string.IsNullOrEmpty(tbPort.Text) ? Convert.ToInt32(tbPort.Text)
+                                    : throw new ArgumentException("Invalid value port value!"),
+                Sender = tbSender.Text,
+                Server = tbServer.Text,
+                Attachment = tbAttachment.Text
+            };
+            
             try
             {
-                if (checkboxAttachment.IsChecked == true && !string.IsNullOrEmpty(_tbAttachement))
+                if (checkboxAttachment.IsChecked == true && !string.IsNullOrEmpty(_configEmail.Attachment))
                 {
-                    if(!Directory.Exists(_tbAttachement))
+                    if(!Directory.Exists(_configEmail.Attachment))
                         throw new DirectoryNotFoundException(tbAttachment.Text);
 
-                    _listFiles = GetListFiles(_tbAttachement);
+                    _listFiles = _helper.GetListFiles(_configEmail.Attachment);
                     foreach (var file in _listFiles)
                     {
-                        using (SmtpClient smtpClient = new SmtpClient(_tbServer, _tbPort))
-                        {
-                            smtpClient.Credentials = CredentialCache.DefaultNetworkCredentials;
-                            smtpClient.EnableSsl = false;
-                            MailMessage mailMessage = new MailMessage(_tbSender, _tbTo, _tbSubject, _tbBody);
-                            Attachment attachment = new Attachment(file);
-                            mailMessage.Attachments.Add(attachment);
-                            smtpClient.Send(mailMessage);
-                        }
+                        _sender.SenderEmail(_configEmail, true, false, file);
                     }
+                }
+                else if (checkboxAttachment.IsChecked == false && checkboxAttachment.IsChecked == false)
+                {
+                    _sender.SenderEmail(_configEmail, false, false, "");
+                }
+                else if (checkboxAttachment.IsChecked == false && 
+                    checkboxThreads.IsChecked == false && 
+                    checkboxThreads.IsChecked == true)
+                {
+                    foreach (var file in _listFiles)
+                    {
+                        _sender.SenderEmail(_configEmail, true, true, file);
+                    }
+                }
+                else
+                {
+                    throw new ArgumentException();
                 }
             }
             catch (Exception)
             {
-
                 throw;
             }
         }
 
-        private void checkboxAttachment_Checked(object sender, RoutedEventArgs e)
+        internal void checkboxAttachment_Checked(object sender, RoutedEventArgs e)
         {
             tbAttachment.IsEnabled = true;
         }
-        private void checkboxAttachment_Unchecked(object sender, RoutedEventArgs e)
+        internal void checkboxAttachment_Unchecked(object sender, RoutedEventArgs e)
         {
             tbAttachment.IsEnabled = false;
         }
 
-        private void checkboxThreads_Checked(object sender, RoutedEventArgs e)
+        internal void checkboxThreads_Checked(object sender, RoutedEventArgs e)
         {
             tbThreads.IsEnabled = true;
         }
-        private void checkboxThreads_Unchecked(object sender, RoutedEventArgs e)
+        internal void checkboxThreads_Unchecked(object sender, RoutedEventArgs e)
         {
             tbThreads.IsEnabled = false;
         }
