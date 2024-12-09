@@ -1,5 +1,7 @@
 
 using EmailSender;
+using EmailSender.Core;
+using EmailSender.Email;
 using Moq;
 
 namespace EmailSenderTest
@@ -21,7 +23,7 @@ namespace EmailSenderTest
         [Test]
         public void EmailSender_()
         {
-            _mockSender.Setup(x => x.SenderEmail(It.IsAny<ConfigsEmail>(), false, false, It.IsAny<string>()))
+            _mockSender.Setup(x => x.SenderEmail(It.IsAny<ConfigsEmail>(), false, It.IsAny<string>()))
                 .Returns(true);
             _mockHelper.Setup(x => x.GetListFiles(It.IsAny<string>()))
                 .Returns(new List<string>

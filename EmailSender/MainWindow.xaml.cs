@@ -11,6 +11,9 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.IO;
+using EmailSender.Core;
+using EmailSender.Email;
+using NLog;
 
 namespace EmailSender
 {
@@ -23,12 +26,15 @@ namespace EmailSender
         private ConfigsEmail _configEmail;
         private ISender _sender;
         private Helper _helper;
+        private static readonly Logger Log = LogManager.GetCurrentClassLogger();
 
         public MainWindow()
         {
             InitializeComponent();
             _sender = new Sender();
             _helper = new Helper();
+            NLog.LogManager.LoadConfiguration("NLog.config");
+            Log.Info("Startando aplicação...");
         }
 
         internal void Button_Click(object sender, RoutedEventArgs e)
@@ -44,10 +50,12 @@ namespace EmailSender
                 Server = tbServer.Text,
                 Attachment = tbAttachment.Text
             };
-            
+
             try
             {
-                if (checkboxAttachment.IsChecked == true && !string.IsNullOrEmpty(_configEmail.Attachment))
+                if (checkboxAttachment.IsChecked == true &&
+                    checkboxThreads.IsChecked == false &&
+                    !string.IsNullOrEmpty(_configEmail.Attachment))
                 {
                     if(!Directory.Exists(_configEmail.Attachment))
                         throw new DirectoryNotFoundException(tbAttachment.Text);
@@ -55,21 +63,18 @@ namespace EmailSender
                     _listFiles = _helper.GetListFiles(_configEmail.Attachment);
                     foreach (var file in _listFiles)
                     {
-                        _sender.SenderEmail(_configEmail, true, false, file);
+                        _sender.SenderEmail(_configEmail, true, file);
                     }
                 }
                 else if (checkboxAttachment.IsChecked == false && checkboxAttachment.IsChecked == false)
                 {
-                    _sender.SenderEmail(_configEmail, false, false, "");
+                    _sender.SenderEmail(_configEmail, false, "");
                 }
-                else if (checkboxAttachment.IsChecked == false && 
-                    checkboxThreads.IsChecked == false && 
+                else if (checkboxAttachment.IsChecked == true &&
                     checkboxThreads.IsChecked == true)
                 {
-                    foreach (var file in _listFiles)
-                    {
-                        _sender.SenderEmail(_configEmail, true, true, file);
-                    }
+                    _listFiles = _helper.GetListFiles(_configEmail.Attachment);
+                    _sender.SenderEmailWithThreads(_configEmail, _listFiles, Convert.ToInt32(tbThreads.Text));
                 }
                 else
                 {
