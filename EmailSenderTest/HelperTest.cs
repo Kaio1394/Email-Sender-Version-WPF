@@ -1,4 +1,4 @@
-﻿using EmailSender;
+﻿using EmailSender.Core;
 using Moq;
 using System;
 using System.Collections.Generic;

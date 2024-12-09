@@ -13,7 +13,17 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="NLog" Version="5.3.4" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Resource Include="resources\Email.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="NLog.config">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>
